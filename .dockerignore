@@ -1,0 +1,21 @@
+# Ignore node_modules and other dependencies
+node_modules
+.yarn
+
+# Ignore build directories
+build
+dist
+
+# Ignore logs and temporary files
+logs
+*.log
+*.tmp
+
+# Ignore test and coverage files
+coverage
+test-results
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+

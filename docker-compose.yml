@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  wave:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: waveterminal
+    environment:
+      - DISPLAY=${DISPLAY}
+      - NODE_ENV=development
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - .:/app/waveterm
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
