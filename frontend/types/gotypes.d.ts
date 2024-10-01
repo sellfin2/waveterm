@@ -443,6 +443,7 @@ declare global {
         "window:tilegapsize"?: number;
         "window:nativetitlebar"?: boolean;
         "window:disablehardwareacceleration"?: boolean;
+        "window:globalhotkey"?: string;
         "telemetry:*"?: boolean;
         "telemetry:enabled"?: boolean;
     };

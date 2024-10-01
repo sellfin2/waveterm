@@ -83,6 +83,7 @@ type SettingsType struct {
 	WindowTileGapSize                 *int64   `json:"window:tilegapsize,omitempty"`
 	WindowNativeTitleBar              bool     `json:"window:nativetitlebar,omitempty"`
 	WindowDisableHardwareAcceleration bool     `json:"window:disablehardwareacceleration,omitempty"`
+	WindowGlobalHotkey                string   `json:"window:globalhotkey,omitempty"`
 
 	TelemetryClear   bool `json:"telemetry:*,omitempty"`
 	TelemetryEnabled bool `json:"telemetry:enabled,omitempty"`
