@@ -477,7 +477,10 @@ function TableBody({
                     model.goHistory(newFileName);
                     setSearch("");
                 }}
-                onClick={() => setFocusIndex(idx)}
+                onClick={(e) => {
+                    setFocusIndex(idx);
+                    console.log("onclick", e.nativeEvent);
+                }}
                 onContextMenu={(e) => handleFileContextMenu(e, row.getValue("path"), row.getValue("mimetype"))}
             >
                 {row.getVisibleCells().map((cell) => (

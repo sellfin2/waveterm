@@ -23,6 +23,7 @@ import {
     initGlobalWaveEventSubs,
     loadConnStatus,
     pushFlashError,
+    subscribeToBrowserEvents,
     subscribeToConnEvents,
 } from "@/store/global";
 import * as WOS from "@/store/wos";
@@ -67,6 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadConnStatus();
     initGlobalWaveEventSubs();
     subscribeToConnEvents();
+    subscribeToBrowserEvents();
 
     // ensures client/window/workspace are loaded into the cache before rendering
     const client = await WOS.loadAndPinWaveObject<Client>(WOS.makeORef("client", clientId));

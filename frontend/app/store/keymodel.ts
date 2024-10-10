@@ -1,7 +1,15 @@
 // Copyright 2024, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { atoms, createBlock, getApi, getBlockComponentModel, globalStore, refocusNode, WOS } from "@/app/store/global";
+import {
+    atoms,
+    createBlock,
+    getActiveBlockComponentModel,
+    getApi,
+    globalStore,
+    refocusNode,
+    WOS,
+} from "@/app/store/global";
 import * as services from "@/app/store/services";
 import {
     deleteLayoutModelForTab,
@@ -163,11 +171,8 @@ function appHandleKeyDown(waveEvent: WaveKeyboardEvent): boolean {
     if (handled) {
         return true;
     }
-    const layoutModel = getLayoutModelForActiveTab();
-    const focusedNode = globalStore.get(layoutModel.focusedNode);
-    const blockId = focusedNode?.data?.blockId;
-    if (blockId != null && shouldDispatchToBlock(waveEvent)) {
-        const bcm = getBlockComponentModel(blockId);
+    if (shouldDispatchToBlock(waveEvent)) {
+        const bcm = getActiveBlockComponentModel();
         const viewModel = bcm?.viewModel;
         if (viewModel?.keyDownHandler) {
             const handledByBlock = viewModel.keyDownHandler(waveEvent);
@@ -264,12 +269,33 @@ function registerGlobalKeys() {
         return true;
     });
     globalKeyMap.set("Cmd:g", () => {
-        const bcm = getBlockComponentModel(getFocusedBlockInActiveTab());
+        const bcm = getActiveBlockComponentModel();
         if (bcm.openSwitchConnection != null) {
             bcm.openSwitchConnection();
             return true;
         }
     });
+    const onBrowserBack = () => {
+        console.log("onBrowserBack");
+        const bcm = getActiveBlockComponentModel();
+        const onBack = bcm?.viewModel?.onBack;
+        if (onBack != null) {
+            onBack();
+            return true;
+        }
+    };
+    globalKeyMap.set("BrowserBack", onBrowserBack);
+    globalKeyMap.set("GoBack", onBrowserBack);
+    const onBrowserForward = () => {
+        console.log("onBrowserForward");
+        const bcm = getActiveBlockComponentModel();
+        const onForward = bcm?.viewModel?.onForward;
+
+            onForward();
+            return true;
+        }
+    };
+    globalKeyMap.set("BrowserForward", onBrowserForward);
     for (let idx = 1; idx <= 9; idx++) {
         globalKeyMap.set(`Cmd:${idx}`, () => {
             switchTabAbs(idx);

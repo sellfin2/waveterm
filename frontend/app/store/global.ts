@@ -398,6 +398,12 @@ async function openLink(uri: string, forceOpenInternally = false) {
     }
 }
 
+function getActiveBlockId() {
+    const layoutModel = getLayoutModelForActiveTab();
+    const focusedNode = globalStore.get(layoutModel.focusedNode);
+    return focusedNode?.data?.blockId;
+}
+
 function registerBlockComponentModel(blockId: string, bcm: BlockComponentModel) {
     blockComponentModelMap.set(blockId, bcm);
 }
@@ -408,6 +414,11 @@ function unregisterBlockComponentModel(blockId: string) {
 
 function getBlockComponentModel(blockId: string): BlockComponentModel {
     return blockComponentModelMap.get(blockId);
+}
+
+function getActiveBlockComponentModel(): BlockComponentModel {
+    const blockId = getActiveBlockId();
+    return getBlockComponentModel(blockId);
 }
 
 function refocusNode(blockId: string) {
@@ -455,6 +466,15 @@ async function loadConnStatus() {
         const curAtom = getConnStatusAtom(connStatus.connection);
         globalStore.set(curAtom, connStatus);
     }
+}
+
+function subscribeToBrowserEvents() {
+    window.addEventListener("hashchange", (e) => {
+        console.log("hashchange");
+    });
+    window.addEventListener("popstate", (e) => {
+        console.log("popstate");
+    });
 }
 
 function subscribeToConnEvents() {
@@ -529,6 +549,8 @@ export {
     countersPrint,
     createBlock,
     fetchWaveFile,
+    getActiveBlockComponentModel,
+    getActiveBlockId,
     getApi,
     getBlockComponentModel,
     getConnStatusAtom,
@@ -549,6 +571,7 @@ export {
     removeFlashError,
     setNodeFocus,
     setPlatform,
+    subscribeToBrowserEvents,
     subscribeToConnEvents,
     unregisterBlockComponentModel,
     useBlockAtom,
