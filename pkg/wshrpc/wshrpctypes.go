@@ -385,3 +385,34 @@ type WaveNotificationOptions struct {
 	Body   string `json:"body,omitempty"`
 	Silent bool   `json:"silent,omitempty"`
 }
+
+type PlotSeries struct {
+	Type       string  `json:"type,omitempty"`
+	Title      string  `json:"title,omitempty"`
+	Key        string  `json:"key,omitempty"`
+	Color      string  `json:"color,omitempty"`
+	Fill       string  `json:"fill,omitempty"`
+	Width      float64 `json:"width,omitempty"`
+	Marker     string  `json:"marker,omitempty"`
+	MarkerSize float64 `json:"markersize,omitempty"`
+}
+
+type PlotAxis struct {
+	Title     string  `json:"title,omitempty"`
+	Color     string  `json:"color,omitempty"`
+	MinVal    float64 `json:"minval,omitempty"`
+	MaxVal    float64 `json:"maxval,omitempty"`
+	AxisType  string  `json:"axistype,omitempty"`
+	Formatter string  `json:"formatter,omitempty"`
+}
+
+type PlotOptions struct {
+	Title       string       `json:"title,omitempty"`
+	Bg          string       `json:"bg,omitempty"`
+	BgOpacity   float64      `json:"bg:opacity,omitempty"`
+	BgBlendMode string       `json:"bg:blendmode,omitempty"`
+	Series      []PlotSeries `json:"series"`
+	XAxis       *PlotAxis    `json:"xaxis,omitempty"`
+	YAxis       *PlotAxis    `json:"yaxis,omitempty"`
+	MaxData     int          `json:"maxdata,omitempty"`
+}
