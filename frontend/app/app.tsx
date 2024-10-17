@@ -13,7 +13,7 @@ import Color from "color";
 import debug from "debug";
 import { Provider, useAtomValue } from "jotai";
 import "overlayscrollbars/overlayscrollbars.css";
-import React, { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { AppBackground } from "./app-bg";
