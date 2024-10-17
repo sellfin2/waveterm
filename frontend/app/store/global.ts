@@ -30,6 +30,7 @@ type GlobalInitOptions = {
     windowId: string;
     clientId: string;
     environment: "electron" | "renderer";
+    windowType: WindowType;
 };
 
 function initGlobal(initOpts: GlobalInitOptions) {

@@ -33,13 +33,19 @@ import { createRoot } from "react-dom/client";
 
 const platform = getApi().getPlatform();
 const urlParams = new URLSearchParams(window.location.search);
+const windowType = urlParams.get("windowtype") ?? "main";
 const windowId = urlParams.get("windowid");
 const clientId = urlParams.get("clientid");
 
 console.log("Wave Starting");
-console.log("clientid", clientId, "windowid", windowId);
+console.log("clientid", clientId, "windowid", windowId, "windowtype", windowType);
 
-initGlobal({ clientId, windowId, platform, environment: "renderer" });
+if (windowType !== "main" && windowType !== "command-palette") {
+    console.error("Invalid window type", windowType);
+    throw new Error("Invalid window type");
+}
+
+initGlobal({ clientId, windowId, platform, environment: "renderer", windowType });
 
 setKeyUtilPlatform(platform);
 
@@ -69,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     subscribeToConnEvents();
 
     // ensures client/window/workspace are loaded into the cache before rendering
-    const client = await WOS.loadAndPinWaveObject<Client>(WOS.makeORef("client", clientId));
+    await WOS.loadAndPinWaveObject<Client>(WOS.makeORef("client", clientId));
     const waveWindow = await WOS.loadAndPinWaveObject<WaveWindow>(WOS.makeORef("window", windowId));
     await WOS.loadAndPinWaveObject<Workspace>(WOS.makeORef("workspace", waveWindow.workspaceid));
     const initialTab = await WOS.loadAndPinWaveObject<Tab>(WOS.makeORef("tab", waveWindow.activetabid));
