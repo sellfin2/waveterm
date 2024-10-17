@@ -1,7 +1,7 @@
 import { getWebServerEndpoint } from "@/util/endpoints";
-import { boundNumber, isBlank } from "@/util/util";
+import * as util from "@/util/util";
 import useResizeObserver from "@react-hook/resize-observer";
-import { generate, parse, walk } from "css-tree";
+import { generate as generateCSS, parse as parseCSS, walk as walkCSS } from "css-tree";
 import { useAtomValue } from "jotai";
 import { CSSProperties, useCallback, useLayoutEffect, useRef } from "react";
 import { debounce } from "throttle-debounce";
@@ -14,39 +14,56 @@ function encodeFileURL(file: string) {
 }
 
 function processBackgroundUrls(cssText: string): string {
-    if (isBlank(cssText)) {
+    if (util.isBlank(cssText)) {
         return null;
     }
     cssText = cssText.trim();
     if (cssText.endsWith(";")) {
         cssText = cssText.slice(0, -1);
     }
-    const attrRe = /^background(-image):\s*/;
+    const attrRe = /^background(-image)?\s*:\s*/i;
     cssText = cssText.replace(attrRe, "");
-    const ast = parse("background: " + cssText, {
+    const ast = parseCSS("background: " + cssText, {
         context: "declaration",
     });
-    let hasJSUrl = false;
-    walk(ast, {
+    let hasUnsafeUrl = false;
+    walkCSS(ast, {
         visit: "Url",
         enter(node) {
             const originalUrl = node.value.trim();
-            if (originalUrl.startsWith("javascript:")) {
-                hasJSUrl = true;
+            if (
+                originalUrl.startsWith("http:") ||
+                originalUrl.startsWith("https:") ||
+                originalUrl.startsWith("data:")
+            ) {
                 return;
             }
-            if (originalUrl.startsWith("data:")) {
+            // allow file:/// urls (if they are absolute)
+            if (originalUrl.startsWith("file://")) {
+                const path = originalUrl.slice(7);
+                if (!path.startsWith("/")) {
+                    console.log(`Invalid background, contains a non-absolute file URL: ${originalUrl}`);
+                    hasUnsafeUrl = true;
+                    return;
+                }
+                const newUrl = encodeFileURL(path);
+                node.value = newUrl;
                 return;
             }
-            const newUrl = encodeFileURL(originalUrl);
-            node.value = newUrl;
+            // allow absolute paths
+            if (originalUrl.startsWith("/") || originalUrl.startsWith("~/")) {
+                const newUrl = encodeFileURL(originalUrl);
+                node.value = newUrl;
+                return;
+            }
+            hasUnsafeUrl = true;
+            console.log(`Invalid background, contains an unsafe URL scheme: ${originalUrl}`);
         },
     });
-    if (hasJSUrl) {
-        console.log("invalid background, contains a 'javascript' protocol url which is not allowed");
+    if (hasUnsafeUrl) {
         return null;
     }
-    const rtnStyle = generate(ast);
+    const rtnStyle = generateCSS(ast);
     if (rtnStyle == null) {
         return null;
     }
@@ -59,15 +76,15 @@ export function AppBackground() {
     const [tabData] = useWaveObjectValue<Tab>(WOS.makeORef("tab", tabId));
     const bgAttr = tabData?.meta?.bg;
     const style: CSSProperties = {};
-    if (!isBlank(bgAttr)) {
+    if (!util.isBlank(bgAttr)) {
         try {
             const processedBg = processBackgroundUrls(bgAttr);
-            if (!isBlank(processedBg)) {
-                const opacity = boundNumber(tabData?.meta?.["bg:opacity"], 0, 1) ?? 0.5;
+            if (!util.isBlank(processedBg)) {
+                const opacity = util.boundNumber(tabData?.meta?.["bg:opacity"], 0, 1) ?? 0.5;
                 style.opacity = opacity;
                 style.background = processedBg;
                 const blendMode = tabData?.meta?.["bg:blendmode"];
-                if (!isBlank(blendMode)) {
+                if (!util.isBlank(blendMode)) {
                     style.backgroundBlendMode = blendMode;
                 }
             }

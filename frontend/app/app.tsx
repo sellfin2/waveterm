@@ -170,7 +170,7 @@ function AppFocusHandler() {
 }
 
 const AppKeyHandlers = () => {
-    React.useEffect(() => {
+    useEffect(() => {
         const staticKeyDownHandler = keyutil.keydownWrapper(appHandleKeyDown);
         document.addEventListener("keydown", staticKeyDownHandler);
 
