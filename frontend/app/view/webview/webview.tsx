@@ -5,7 +5,7 @@ import { getApi, getSettingsKeyAtom, openLink } from "@/app/store/global";
 import { getSimpleControlShiftAtom } from "@/app/store/keymodel";
 import { ObjectService } from "@/app/store/services";
 import { RpcApi } from "@/app/store/wshclientapi";
-import { WindowRpcClient } from "@/app/store/wshrpcutil";
+import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { NodeModel } from "@/layout/index";
 import { WOS, globalStore } from "@/store/global";
 import { adaptFromReactOrNativeKeyEvent, checkKeyPressed } from "@/util/keyutil";
@@ -60,7 +60,6 @@ export class WebViewModel implements ViewModel {
         this.homepageUrl = atom((get) => {
             const defaultUrl = get(defaultUrlAtom);
             const pinnedUrl = get(this.blockAtom).meta.pinnedurl;
-            console.log("homepageUrl", pinnedUrl, defaultUrl);
             return pinnedUrl ?? defaultUrl;
         });
         this.urlWrapperClassName = atom("");
@@ -370,17 +369,17 @@ export class WebViewModel implements ViewModel {
         if (url != null && url != "") {
             switch (scope) {
                 case "block":
-                    await RpcApi.SetMetaCommand(WindowRpcClient, {
+                    await RpcApi.SetMetaCommand(TabRpcClient, {
                         oref: WOS.makeORef("block", this.blockId),
                         meta: { pinnedurl: url },
                     });
                     break;
                 case "global":
-                    await RpcApi.SetMetaCommand(WindowRpcClient, {
+                    await RpcApi.SetMetaCommand(TabRpcClient, {
                         oref: WOS.makeORef("block", this.blockId),
                         meta: { pinnedurl: "" },
                     });
-                    await RpcApi.SetConfigCommand(WindowRpcClient, { "web:defaulturl": url });
+                    await RpcApi.SetConfigCommand(TabRpcClient, { "web:defaulturl": url });
                     break;
             }
         }
@@ -468,9 +467,10 @@ function makeWebViewModel(blockId: string, nodeModel: NodeModel): WebViewModel {
 interface WebViewProps {
     blockId: string;
     model: WebViewModel;
+    onFailLoad?: (url: string) => void;
 }
 
-const WebView = memo(({ model }: WebViewProps) => {
+const WebView = memo(({ model, onFailLoad }: WebViewProps) => {
     const blockData = useAtomValue(model.blockAtom);
     const defaultUrl = useAtomValue(model.homepageUrl);
     const defaultSearchAtom = getSettingsKeyAtom("web:defaultsearch");
@@ -555,6 +555,10 @@ const WebView = memo(({ model }: WebViewProps) => {
                 console.warn("Suppressed ERR_ABORTED error", e);
             } else {
                 console.error(`Failed to load ${e.validatedURL}: ${e.errorDescription}`);
+                if (onFailLoad) {
+                    const curUrl = model.webviewRef?.current.getURL();
+                    onFailLoad(curUrl);
+                }
             }
         };
         const webviewFocus = () => {

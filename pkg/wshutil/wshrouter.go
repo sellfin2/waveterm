@@ -52,12 +52,16 @@ func MakeControllerRouteId(blockId string) string {
 	return "controller:" + blockId
 }
 
-func MakeWindowRouteId(windowId string) string {
-	return "window:" + windowId
-}
-
 func MakeProcRouteId(procId string) string {
 	return "proc:" + procId
+}
+
+func MakeTabRouteId(tabId string) string {
+	return "tab:" + tabId
+}
+
+func MakeFeBlockRouteId(blockId string) string {
+	return "feblock:" + blockId
 }
 
 var DefaultRouter = NewWshRouter()
@@ -274,10 +278,14 @@ func (router *WshRouter) RegisterRoute(routeId string, rpc AbstractRpcClient) {
 	log.Printf("[router] registering wsh route %q\n", routeId)
 	router.Lock.Lock()
 	defer router.Lock.Unlock()
+	alreadyExists := router.RouteMap[routeId] != nil
+	if alreadyExists {
+		log.Printf("[router] warning: route %q already exists (replacing)\n", routeId)
+	}
 	router.RouteMap[routeId] = rpc
 	go func() {
 		// announce
-		if router.GetUpstreamClient() != nil {
+		if !alreadyExists && router.GetUpstreamClient() != nil {
 			announceMsg := RpcMessage{Command: wshrpc.Command_RouteAnnounce, Source: routeId}
 			announceBytes, _ := json.Marshal(announceMsg)
 			router.GetUpstreamClient().SendRpcMessage(announceBytes)
@@ -322,6 +330,7 @@ func (router *WshRouter) UnregisterRoute(routeId string) {
 	}
 	go func() {
 		wps.Broker.UnsubscribeAll(routeId)
+		wps.Broker.Publish(wps.WaveEvent{Event: wps.Event_RouteGone, Scopes: []string{routeId}})
 	}()
 }
 
