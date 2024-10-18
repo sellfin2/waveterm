@@ -56,6 +56,7 @@ declare global {
         clientId: string;
         windowId: string;
         activate: boolean;
+        windowType: WindowType;
     };
 
     type ElectronApi = {
