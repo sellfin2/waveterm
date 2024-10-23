@@ -13,6 +13,7 @@ interface ModalProps {
     okLabel?: string;
     cancelLabel?: string;
     className?: string;
+    fullScreen?: boolean;
     onClickBackdrop?: () => void;
     onOk?: () => void;
     onCancel?: () => void;
@@ -20,15 +21,21 @@ interface ModalProps {
 }
 
 const Modal = forwardRef<HTMLDivElement, ModalProps>(
-    ({ children, className, cancelLabel, okLabel, onCancel, onOk, onClose, onClickBackdrop }: ModalProps, ref) => {
-        const renderBackdrop = (onClick) => <div className="modal-backdrop" onClick={onClick}></div>;
+    (
+        { children, className, cancelLabel, okLabel, fullScreen, onCancel, onOk, onClose, onClickBackdrop }: ModalProps,
+        ref
+    ) => {
+        const renderBackdrop = (onClick) => {
+            if (fullScreen) return null;
+            <div className="modal-backdrop" onClick={onClick}></div>;
+        };
 
         const renderFooter = () => {
             return onOk || onCancel;
         };
 
         const renderModal = () => (
-            <div className="modal-wrapper">
+            <div className={clsx("modal-wrapper", { "full-screen": fullScreen === true })}>
                 {renderBackdrop(onClickBackdrop)}
                 <div ref={ref} className={clsx(`modal`, className)}>
                     <Button className="grey ghost modal-close-btn" onClick={onClose} title="Close (ESC)">
@@ -79,6 +86,7 @@ const ModalFooter = ({ onCancel, onOk, cancelLabel = "Cancel", okLabel = "Ok" }:
 interface FlexiModalProps {
     children?: React.ReactNode;
     className?: string;
+    fullScreen?: boolean;
     onClickBackdrop?: () => void;
 }
 
@@ -89,11 +97,14 @@ interface FlexiModalComponent
 }
 
 const FlexiModal = forwardRef<HTMLDivElement, FlexiModalProps>(
-    ({ children, className, onClickBackdrop }: FlexiModalProps, ref) => {
-        const renderBackdrop = (onClick: () => void) => <div className="modal-backdrop" onClick={onClick}></div>;
+    ({ children, className, fullScreen, onClickBackdrop }: FlexiModalProps, ref) => {
+        const renderBackdrop = (onClick: () => void) => {
+            if (fullScreen) return null;
+            return <div className="modal-backdrop" onClick={onClick}></div>;
+        };
 
         const renderModal = () => (
-            <div className="modal-wrapper">
+            <div className={clsx("modal-wrapper", { "full-screen": fullScreen === true })}>
                 {renderBackdrop(onClickBackdrop)}
                 <div className={`modal ${className}`} ref={ref}>
                     {children}

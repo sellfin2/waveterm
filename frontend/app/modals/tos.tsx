@@ -259,7 +259,7 @@ const TosModal = () => {
         return null;
     }
     return (
-        <FlexiModal className="tos-modal" ref={modalRef}>
+        <FlexiModal className="tos-modal" ref={modalRef} fullScreen>
             <OverlayScrollbarsComponent className="modal-inner" options={{ scrollbars: { autoHide: "leave" } }}>
                 {pageComp}
             </OverlayScrollbarsComponent>
