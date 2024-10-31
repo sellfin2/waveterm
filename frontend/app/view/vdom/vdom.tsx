@@ -294,6 +294,9 @@ function VDomTag({ elem, model }: { elem: VDomElem; model: VDomModel }) {
         return childrenComps;
     }
     props.key = "e-" + elem.waveid;
+    if (elem.tag == "img") {
+        childrenComps = null;
+    }
     return React.createElement(elem.tag, props, childrenComps);
 }
 
