@@ -55,6 +55,9 @@ type Client struct {
 	OverrideUrlHandler http.Handler
 	NewBlockFlag       bool
 	SetupFn            func()
+	TransferElemCache  map[string][]byte
+	TextNodeCache      map[string]int
+	TextNodeNextId     int
 }
 
 func (c *Client) GetIsDone() bool {
@@ -90,11 +93,14 @@ func MakeClient(appOpts AppOpts) *Client {
 		appOpts.NewBlockFlag = "n"
 	}
 	client := &Client{
-		Lock:          &sync.Mutex{},
-		AppOpts:       appOpts,
-		Root:          vdom.MakeRoot(),
-		DoneCh:        make(chan struct{}),
-		UrlHandlerMux: mux.NewRouter(),
+		Lock:              &sync.Mutex{},
+		AppOpts:           appOpts,
+		Root:              vdom.MakeRoot(),
+		DoneCh:            make(chan struct{}),
+		UrlHandlerMux:     mux.NewRouter(),
+		TransferElemCache: make(map[string][]byte),
+		TextNodeCache:     make(map[string]int),
+		TextNodeNextId:    1,
 		Opts: vdom.VDomBackendOpts{
 			CloseOnCtrlC:         appOpts.CloseOnCtrlC,
 			GlobalKeyboardEvents: appOpts.GlobalKeyboardEvents,

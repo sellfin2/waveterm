@@ -75,7 +75,7 @@ func (impl *VDomServerImpl) VDomRenderCommand(ctx context.Context, feUpdate vdom
 	} else {
 		update, err = impl.Client.incrementalRender()
 	}
-	update.CreateTransferElems()
+	impl.Client.CreateTransferElems(update)
 
 	if err != nil {
 		respChan <- wshrpc.RespOrErrorUnion[*vdom.VDomBackendUpdate]{
