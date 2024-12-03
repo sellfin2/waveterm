@@ -6,15 +6,18 @@ import { FloatingPortal, useFloating, useInteractions } from "@floating-ui/react
 import clsx from "clsx";
 import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
-import "./notificationbubbles.scss";
 import { NotificationItem } from "./notificationitem";
+import { RatingBubble } from "./ratingbubble";
 import { useNotification } from "./usenotification";
+
+import "./notificationbubbles.scss";
 
 const NotificationBubbles = () => {
     const {
         notifications,
         hoveredId,
         hideNotification,
+        removeNotification,
         copyNotification,
         handleActionClick,
         formatTimestamp,
@@ -59,6 +62,15 @@ const NotificationBubbles = () => {
             >
                 {notifications.map((notif) => {
                     if (notif.hidden) return null;
+                    if (notif.componentType === "rating") {
+                        return (
+                            <RatingBubble
+                                key={notif.id}
+                                notification={notif}
+                                onRemove={removeNotification}
+                            ></RatingBubble>
+                        );
+                    }
                     return (
                         <NotificationItem
                             key={notif.id}
