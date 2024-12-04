@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tailscale/hujson"
 	"github.com/wavetermdev/waveterm/pkg/util/utilfn"
 	"github.com/wavetermdev/waveterm/pkg/wavebase"
 	"github.com/wavetermdev/waveterm/pkg/waveobj"
@@ -153,7 +154,11 @@ func readConfigHelper(fileName string, barr []byte, readErr error) (waveobj.Meta
 		return nil, cerrs
 	}
 	var rtn waveobj.MetaMapType
-	err := json.Unmarshal(barr, &rtn)
+	barr, err := hujson.Standardize(barr)
+	if err != nil {
+		cerrs = append(cerrs, ConfigError{File: fileName, Err: err.Error()})
+	}
+	err = json.Unmarshal(barr, &rtn)
 	if err != nil {
 		if syntaxErr, ok := err.(*json.SyntaxError); ok {
 			offset := syntaxErr.Offset
@@ -407,7 +412,7 @@ func jsonMarshalConfigInOrder(m waveobj.MetaMapType) ([]byte, error) {
 	var buf bytes.Buffer
 	orderedKeys := orderConfigKeys(m)
 	buf.WriteString("{\n")
-	for idx, key := range orderedKeys {
+	for _, key := range orderedKeys {
 		val := m[key]
 		keyBarr, err := json.Marshal(key)
 		if err != nil {
@@ -422,9 +427,7 @@ func jsonMarshalConfigInOrder(m waveobj.MetaMapType) ([]byte, error) {
 		buf.Write(keyBarr)
 		buf.WriteString(": ")
 		buf.Write(valBarr)
-		if idx < len(orderedKeys)-1 {
-			buf.WriteString(",")
-		}
+		buf.WriteString(",")
 		buf.WriteString("\n")
 	}
 	buf.WriteString("}")
