@@ -1,30 +1,36 @@
 // Copyright 2024, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { atoms, globalStore, refocusNode } from "@/app/store/global";
-import { RpcApi } from "@/app/store/wshclientapi";
-import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { Button } from "@/element/button";
 import { ContextMenuModel } from "@/store/contextmenu";
 import { fireAndForget } from "@/util/util";
 import { clsx } from "clsx";
+import { atom, useAtom, useAtomValue } from "jotai";
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+
+import { atoms, globalStore, refocusNode } from "@/app/store/global";
+import { RpcApi } from "@/app/store/wshclientapi";
+import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { ObjectService } from "../store/services";
 import { makeORef, useWaveObjectValue } from "../store/wos";
+
 import "./tab.scss";
+
+const adjacentTabsAtom = atom<Set<string>>(new Set<string>());
 
 interface TabProps {
     id: string;
-    active: boolean;
-    isFirst: boolean;
+    isActive: boolean;
     isBeforeActive: boolean;
-    isDragging: boolean;
+    draggingId: string;
     tabWidth: number;
     isNew: boolean;
     isPinned: boolean;
-    onSelect: () => void;
+    tabIds: string[];
+    tabRefs: React.MutableRefObject<React.RefObject<HTMLDivElement>[]>;
+    onClick: () => void;
     onClose: (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null) => void;
-    onDragStart: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+    onMouseDown: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
     onLoaded: () => void;
     onPinChange: () => void;
 }
@@ -34,16 +40,18 @@ const Tab = memo(
         (
             {
                 id,
-                active,
+                isActive,
                 isPinned,
                 isBeforeActive,
-                isDragging,
+                draggingId,
                 tabWidth,
                 isNew,
+                tabIds,
+                tabRefs,
                 onLoaded,
-                onSelect,
+                onClick,
                 onClose,
-                onDragStart,
+                onMouseDown,
                 onPinChange,
             },
             ref
@@ -56,6 +64,11 @@ const Tab = memo(
             const editableTimeoutRef = useRef<NodeJS.Timeout>();
             const loadedRef = useRef(false);
             const tabRef = useRef<HTMLDivElement>(null);
+            const adjacentTabsRef = useRef<Set<string>>(new Set());
+
+            const tabsSwapped = useAtomValue<boolean>(atoms.tabsSwapped);
+            const tabs = document.querySelectorAll(".tab");
+            const [adjacentTabs, setAdjacentTabs] = useAtom(adjacentTabsAtom);
 
             useImperativeHandle(ref, () => tabRef.current as HTMLDivElement);
 
@@ -195,20 +208,132 @@ const Tab = memo(
                 [onPinChange, handleRenameTab, id, onClose, isPinned]
             );
 
+            useEffect(() => {
+                // Get the index of the current tab ID
+                const currentIndex = tabIds.indexOf(id);
+                // Get the right adjacent ID
+                const rightAdjacentId = tabIds[currentIndex + 1];
+                // Get the left adjacent ID
+                const leftAdjacentId = tabIds[currentIndex - 1];
+
+                const reset = () => {
+                    if (!isActive) {
+                        const currentTabElement = document.querySelector(`[data-tab-id="${id}"]`) as HTMLElement;
+                        // To check if leftAdjacentElement is the active tab then do not reset opacity
+                        const leftAdjacentElement = document.querySelector(
+                            `[data-tab-id="${leftAdjacentId}"]`
+                        ) as HTMLElement;
+                        if (!currentTabElement || !leftAdjacentElement) return;
+                        const separator = currentTabElement.querySelector(".separator") as HTMLElement;
+
+                        if (!leftAdjacentElement.classList.contains("active")) {
+                            separator.style.opacity = "1"; // Reset opacity for the current tab only if not active
+                        }
+
+                        const draggingTabElement = document.querySelector(
+                            `[data-tab-id="${draggingId}"]`
+                        ) as HTMLElement;
+                        if (!draggingTabElement) return;
+
+                        // If dragging tab is the first tab set opacity to 1
+                        if (draggingId === tabIds[0]) {
+                            const separator = draggingTabElement.querySelector(".separator") as HTMLElement;
+                            separator.style.opacity = "1";
+                        } else if (draggingId === tabIds[tabIds.length - 1]) {
+                            // if daragging tab is the last tab set opacity of right separator to 1
+                            const draggingTabElement = document.querySelector(
+                                `[data-tab-id="${draggingId}"]`
+                            ) as HTMLElement;
+                            if (!draggingTabElement) return;
+                            const separator = draggingTabElement.querySelector(".right-separator") as HTMLElement;
+                            separator.style.opacity = "1";
+                        }
+                    }
+
+                    if (rightAdjacentId) {
+                        // To check if rightAdjacentElement is the active tab then do not reset opacity
+                        const rightAdjacentElement = document.querySelector(
+                            `[data-tab-id="${rightAdjacentId}"]`
+                        ) as HTMLElement;
+                        if (!rightAdjacentElement) return;
+                        const separator = rightAdjacentElement.querySelector(".separator") as HTMLElement;
+
+                        if (!rightAdjacentElement.classList.contains("active")) {
+                            separator.style.opacity = "1"; // Reset opacity for the right adjacent tab
+                        }
+                    }
+                };
+
+                if (tabsSwapped || isActive) {
+                    const currentTabElement = document.querySelector(`[data-tab-id="${id}"]`) as HTMLElement;
+                    if (!currentTabElement) return;
+                    const separator = currentTabElement.querySelector(".separator") as HTMLElement;
+                    const rightSeparator = currentTabElement.querySelector(".right-separator") as HTMLElement;
+
+                    if (isActive || draggingId === id) {
+                        separator.style.opacity = "0";
+                        if (rightSeparator) {
+                            rightSeparator.style.opacity = "0";
+                        }
+                    }
+
+                    // Set the opacity of the separator for the right adjacent tab
+                    if (rightAdjacentId) {
+                        const rightAdjacentTabElement = document.querySelector(
+                            `[data-tab-id="${rightAdjacentId}"]`
+                        ) as HTMLElement;
+                        if (!rightAdjacentTabElement) return;
+                        const separator = rightAdjacentTabElement.querySelector(".separator") as HTMLElement;
+
+                        if (isActive || draggingId === id) {
+                            separator.style.opacity = "0";
+                        }
+                    }
+
+                    return () => {
+                        reset();
+                    };
+                } else {
+                    reset();
+                }
+            }, [id, tabIds, isActive, draggingId, tabsSwapped]);
+
+            const handleMouseEnter = useCallback(() => {
+                if (isActive) return;
+                const currentTabElement = document.querySelector(`[data-tab-id="${id}"]`) as HTMLElement;
+                if (currentTabElement) {
+                    if (!tabsSwapped) {
+                        currentTabElement.classList.add("hover");
+                    }
+                }
+            }, [id, isActive, tabsSwapped]);
+
+            const handleMouseLeave = useCallback(() => {
+                if (isActive) return;
+                const currentTabElement = document.querySelector(`[data-tab-id="${id}"]`) as HTMLElement;
+                if (currentTabElement) {
+                    currentTabElement.classList.remove("hover");
+                }
+            }, [id, isActive, tabsSwapped]);
+
             return (
                 <div
                     ref={tabRef}
                     className={clsx("tab", {
-                        active,
-                        dragging: isDragging,
+                        active: isActive,
+                        "is-pinned": isPinned,
+                        "is-dragging": draggingId === id,
                         "before-active": isBeforeActive,
                         "new-tab": isNew,
                     })}
-                    onMouseDown={onDragStart}
-                    onClick={onSelect}
+                    onMouseDown={onMouseDown}
+                    onClick={onClick}
                     onContextMenu={handleContextMenu}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                     data-tab-id={id}
                 >
+                    <div className="separator"></div>
                     <div className="tab-inner">
                         <div
                             ref={editableRef}
@@ -220,6 +345,7 @@ const Tab = memo(
                             suppressContentEditableWarning={true}
                         >
                             {tabData?.name}
+                            {/* {id.substring(id.length - 3)} */}
                         </div>
                         {isPinned ? (
                             <Button
@@ -243,6 +369,7 @@ const Tab = memo(
                             </Button>
                         )}
                     </div>
+                    {tabIds[tabIds.length - 1] === id && <div className="right-separator"></div>}
                 </div>
             );
         }
