@@ -45,7 +45,7 @@ const config = {
                 arch: ["universal", "arm64", "x64"],
             },
             {
-                target: "dmg",
+                target: "pkg",
                 arch: ["universal", "arm64", "x64"],
             },
         ],
