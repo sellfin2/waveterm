@@ -110,7 +110,7 @@
         "htl": "^0.3.1",
         "html-to-image": "^1.11.11",
         "immer": "^10.1.1",
-        "jotai": "2.9.3",
+        "jotai": "2.11.0",
         "monaco-editor": "^0.52.0",
         "monaco-yaml": "^5.2.3",
         "overlayscrollbars": "^2.10.1",
